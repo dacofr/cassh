@@ -4,15 +4,6 @@ CHANGELOG
 CASSH Server
 -----
 
-1.10.0
-------
-
-2020/01/24
-
-### Breaking changes
-  - Support for web.py 0.40 -> deprecate CherryPyWSGIServer
-
-
 1.9.2
 -----
 

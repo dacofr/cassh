@@ -18,7 +18,7 @@ from json import dumps, loads
 from os import chmod, getenv
 from os.path import isfile
 from shutil import copyfile
-from sys import argv
+from sys import argv, exit
 
 # Third party library imports
 from configparser import ConfigParser, NoOptionError, NoSectionError
@@ -28,7 +28,7 @@ from requests.exceptions import ConnectionError
 # Debug
 # from pdb import set_trace as st
 
-VERSION = '%(prog)s 1.6.0'
+VERSION = '%(prog)s 1.6.3'
 
 def print_result(result):
     """ Display result """
@@ -86,6 +86,13 @@ def read_conf(conf_path):
     except NoSectionError:
         user_metadata['auth'] = None
         user_metadata['realname'] = None
+
+    try:
+        user_metadata['ldap_enable'] = bool(config.get('ldap', 'enable') != 'False')
+    except NoOptionError:
+        user_metadata['ldap_enable'] = True
+    except NoSectionError:
+        user_metadata['ldap_enable'] = False
 
     if not isfile(user_metadata['key_path']):
         print('File %s doesn\'t exists' % user_metadata['key_path'])
@@ -200,8 +207,10 @@ class CASSH(object):
         """
         data = {}
         passwd_message = 'Please type your LDAP password (user=%s): ' % self.realname
+        if self.user_metadata['ldap_enable']:
+            data.update({'password': getpass(passwd_message)})
         if self.auth == 'ldap':
-            data.update({'realname': self.realname, 'password': getpass(passwd_message)})
+            data.update({'realname': self.realname})
         if prefix is not None:
             data.update(prefix)
         return data
@@ -381,6 +390,7 @@ if __name__ == '__main__':
         print('[ldap]')
         print('# realname : this is the LDAP/AD login user')
         print('realname = ursula.ser@domain.fr')
+        print('enable = True')
         exit(1)
 
     CLIENT = CASSH(read_conf(CONF_FILE))
