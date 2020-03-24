@@ -38,7 +38,7 @@ load helpers
 
 @test "CLIENT: Add user with bad username" {
     RESP=$(curl -s -X PUT -d 'username=test_user' ${CASSH_URL}/client)
-    [ "${RESP}" == "Error: Username doesn't match pattern ^([a-z]+)$" ]
+    [ "${RESP}" == "Error: username doesn't match pattern ^([a-z]+)$" ]
 }
 
 @test "CLIENT: Add user without realname" {
@@ -63,7 +63,7 @@ load helpers
 
 @test "CLIENT: Add user named 'all' (should fail)" {
     RESP=$(curl -s -X PUT -d "username=all&realname=test.user@domain.fr&pubkey=${PUB_KEY_EXAMPLE}" ${CASSH_URL}/client)
-    [ "${RESP}" == "Error: Username doesn't match pattern ^([a-z]+)$" ]
+    [ "${RESP}" == "Error: username doesn't match pattern ^([a-z]+)$" ]
 }
 
 @test "CLIENT: Add user with same username (should fail)" {
@@ -177,6 +177,68 @@ load helpers
     [ "${status}" -eq 0 ]
 }
 
+# == Admin handle principles of a user
+#
+
+@test "ADMIN: GET testuser principals" {
+    RESP=$(curl -s -X GET ${CASSH_URL}/admin/testuser/principals)
+    [ "${RESP}" == "OK: testuser principals are ('',)" ]
+}
+
+@test "ADMIN: Test bad pattern 'username' user principals" {
+    RESP=$(curl -s -X GET ${CASSH_URL}/admin/b@dt€xt/principals)
+    [ "${RESP}" == "Malformed Request-URI" ]
+}
+
+@test "ADMIN: Test get unknown user principals" {
+    RESP=$(curl -s -X GET ${CASSH_URL}/admin/unknown/principals)
+    [ "${RESP}" == "ERROR: unknown doesn't exist or doesn't have principals..." ]
+}
+
+@test "ADMIN: Test add principal 'test-single' to unknown user" {
+    RESP=$(curl -s -X POST -d "add=test-single" ${CASSH_URL}/admin/unknown/principals)
+    [ "${RESP}" == "ERROR: unknown doesn't exist" ]
+}
+
+@test "ADMIN: Test add principal 'test-single' to testuser" {
+    RESP=$(curl -s -X POST -d "add=test-single" ${CASSH_URL}/admin/testuser/principals)
+    [ "${RESP}" == "OK: testuser principals are 'test-single'" ]
+}
+
+@test "ADMIN: Test remove principal 'test-single' to testuser" {
+    RESP=$(curl -s -X POST -d "remove=test-single" ${CASSH_URL}/admin/testuser/principals)
+    [ "${RESP}" == "OK: testuser principals are ''" ]
+}
+
+@test "ADMIN: Test purge principals to testuser" {
+    RESP=$(curl -s -X POST -d "purge=true" ${CASSH_URL}/admin/testuser/principals)
+    [ "${RESP}" == "OK: testuser principals are ''" ]
+}
+
+@test "ADMIN: Test add principals 'test-multiple-a,test-multiple-b' to testuser" {
+    RESP=$(curl -s -X POST -d "add=test-multiple-a,test-multiple-b" ${CASSH_URL}/admin/testuser/principals)
+    [ "${RESP}" == "OK: testuser principals are 'test-multiple-a,test-multiple-b'" ]
+}
+
+@test "ADMIN: Test remove principals 'test-multiple-a,b@dt€xt' to testuser" {
+    RESP=$(curl -s -X POST -d "remove=test-multiple-a,b@dt€xt" ${CASSH_URL}/admin/testuser/principals)
+    [ "${RESP}" == "Error: principal doesn't match pattern ^([a-zA-Z-]+)$" ]
+}
+
+@test "ADMIN: Test remove principals 'test-multiple-a,test-multiple-b' to testuser" {
+    RESP=$(curl -s -X POST -d "remove=test-multiple-a,test-multiple-b" ${CASSH_URL}/admin/testuser/principals)
+    [ "${RESP}" == "OK: testuser principals are ''" ]
+}
+
+@test "ADMIN: Test update principals 'test-multiple-c,test-multiple-d' to testuser" {
+    RESP=$(curl -s -X POST -d "update=test-multiple-c,test-multiple-d" ${CASSH_URL}/admin/testuser/principals)
+    [ "${RESP}" == "OK: testuser principals are 'test-multiple-c,test-multiple-d'" ]
+}
+
+@test "ADMIN: Test unknown action" {
+    RESP=$(curl -s -X POST -d "unknown=action" ${CASSH_URL}/admin/testuser/principals)
+    [ "${RESP}" == "[ERROR] Unknown action" ]
+}
 
 # == Cleanup
 #
