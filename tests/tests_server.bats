@@ -182,7 +182,7 @@ load helpers
 
 @test "ADMIN: GET testuser principals" {
     RESP=$(curl -s -X GET ${CASSH_URL}/admin/testuser/principals)
-    [ "${RESP}" == "OK: testuser principals are ('',)" ]
+    [ "${RESP}" == "OK: testuser principals are ('testuser',)" ]
 }
 
 @test "ADMIN: Test bad pattern 'username' user principals" {
@@ -202,22 +202,22 @@ load helpers
 
 @test "ADMIN: Test add principal 'test-single' to testuser" {
     RESP=$(curl -s -X POST -d "add=test-single" ${CASSH_URL}/admin/testuser/principals)
-    [ "${RESP}" == "OK: testuser principals are 'test-single'" ]
+    [ "${RESP}" == "OK: testuser principals are 'testuser,test-single'" ]
 }
 
 @test "ADMIN: Test remove principal 'test-single' to testuser" {
     RESP=$(curl -s -X POST -d "remove=test-single" ${CASSH_URL}/admin/testuser/principals)
-    [ "${RESP}" == "OK: testuser principals are ''" ]
+    [ "${RESP}" == "OK: testuser principals are 'testuser'" ]
 }
 
 @test "ADMIN: Test purge principals to testuser" {
     RESP=$(curl -s -X POST -d "purge=true" ${CASSH_URL}/admin/testuser/principals)
-    [ "${RESP}" == "OK: testuser principals are ''" ]
+    [ "${RESP}" == "OK: testuser principals are 'testuser'" ]
 }
 
 @test "ADMIN: Test add principals 'test-multiple-a,test-multiple-b' to testuser" {
     RESP=$(curl -s -X POST -d "add=test-multiple-a,test-multiple-b" ${CASSH_URL}/admin/testuser/principals)
-    [ "${RESP}" == "OK: testuser principals are 'test-multiple-a,test-multiple-b'" ]
+    [ "${RESP}" == "OK: testuser principals are 'testuser,test-multiple-a,test-multiple-b'" ]
 }
 
 @test "ADMIN: Test remove principals 'test-multiple-a,b@dt€xt' to testuser" {
@@ -227,7 +227,7 @@ load helpers
 
 @test "ADMIN: Test remove principals 'test-multiple-a,test-multiple-b' to testuser" {
     RESP=$(curl -s -X POST -d "remove=test-multiple-a,test-multiple-b" ${CASSH_URL}/admin/testuser/principals)
-    [ "${RESP}" == "OK: testuser principals are ''" ]
+    [ "${RESP}" == "OK: testuser principals are 'testuser'" ]
 }
 
 @test "ADMIN: Test update principals 'test-multiple-c,test-multiple-d' to testuser" {
