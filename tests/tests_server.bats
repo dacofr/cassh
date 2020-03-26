@@ -38,7 +38,7 @@ load helpers
 
 @test "CLIENT: Add user with bad username" {
     RESP=$(curl -s -X PUT -d 'username=test_user' ${CASSH_URL}/client)
-    [ "${RESP}" == "Error: username doesn't match pattern ^([a-z]+)$" ]
+    [ "${RESP}" == "Error: invalid username." ]
 }
 
 @test "CLIENT: Add user without realname" {
@@ -63,7 +63,7 @@ load helpers
 
 @test "CLIENT: Add user named 'all' (should fail)" {
     RESP=$(curl -s -X PUT -d "username=all&realname=test.user@domain.fr&pubkey=${PUB_KEY_EXAMPLE}" ${CASSH_URL}/client)
-    [ "${RESP}" == "Error: username doesn't match pattern ^([a-z]+)$" ]
+    [ "${RESP}" == "Error: username not valid." ]
 }
 
 @test "CLIENT: Add user with same username (should fail)" {
@@ -94,7 +94,7 @@ load helpers
 #
 @test "CLIENT: Signing key without username" {
     RESP=$(curl -s -X POST ${CASSH_URL}/client)
-    [ "${RESP}" == 'Error: No username option given. Update your CASSH >= 1.3.0' ]
+    [ "${RESP}" == 'Error: No username option given.' ]
 }
 
 @test "CLIENT: Signing key without realname" {
@@ -127,6 +127,7 @@ load helpers
 #
 @test "ADMIN: Revoke 'toto'" {
     RESP=$(curl -s -X POST -d 'revoke=true' ${CASSH_URL}/admin/toto)
+    echo $RESP
     [ "${RESP}" == 'Revoke user=toto.' ]
 }
 
@@ -222,7 +223,7 @@ load helpers
 
 @test "ADMIN: Test remove principals 'test-multiple-a,b@dt€xt' to testuser" {
     RESP=$(curl -s -X POST -d "remove=test-multiple-a,b@dt€xt" ${CASSH_URL}/admin/testuser/principals)
-    [ "${RESP}" == "Error: principal doesn't match pattern ^([a-zA-Z-]+)$" ]
+    [ "${RESP}" == "Error: invalid principals." ]
 }
 
 @test "ADMIN: Test remove principals 'test-multiple-a,test-multiple-b' to testuser" {
