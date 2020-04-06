@@ -181,19 +181,9 @@ load helpers
 # == Admin handle principles of a user
 #
 
-@test "ADMIN: GET testuser principals" {
-    RESP=$(curl -s -X GET ${CASSH_URL}/admin/testuser/principals)
-    [ "${RESP}" == "OK: testuser principals are ('testuser',)" ]
-}
-
 @test "ADMIN: Test bad pattern 'username' user principals" {
     RESP=$(curl -s -X GET ${CASSH_URL}/admin/b@dt€xt/principals)
     [ "${RESP}" == "Malformed Request-URI" ]
-}
-
-@test "ADMIN: Test get unknown user principals" {
-    RESP=$(curl -s -X GET ${CASSH_URL}/admin/unknown/principals)
-    [ "${RESP}" == "ERROR: unknown doesn't exist or doesn't have principals..." ]
 }
 
 @test "ADMIN: Test add principal 'test-single' to unknown user" {
