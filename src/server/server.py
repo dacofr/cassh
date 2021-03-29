@@ -2,7 +2,7 @@
 """
 Sign a user's SSH public key.
 
-Copyright 2017-2020 Nicolas BEGUIER
+Copyright 2017-2021 Nicolas BEGUIER
 Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas_beguier@hotmail.com)
 
@@ -29,7 +29,7 @@ import lib.tools as tools
 # DEBUG
 # from pdb import set_trace as st
 
-VERSION = '2.1.0'
+VERSION = '2.1.1'
 
 SERVER_OPTS, ARGS, TOOLS = tools.loadconfig(version=VERSION)
 
