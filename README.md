@@ -212,6 +212,7 @@ password = xxxxxxxx
 host = ldap.domain.fr
 bind_dn = OU=User,DC=domain,DC=fr
 admin_cn = CN=Admin,OU=Group,DC=domain,DC=fr
+protocol = ldaps
 # Key in user result to get his LDAP realname
 filterstr = userPrincipalName
 

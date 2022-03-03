@@ -97,6 +97,8 @@ def loadconfig(version='Unknown'):
             server_opts['ldap_username'] = config.get('ldap', 'username')
             server_opts['ldap_password'] = config.get('ldap', 'password')
             server_opts['ldap_admin_cn'] = config.get('ldap', 'admin_cn')
+            # ldap_protocol valid values: "ldap" (default for backward compatibility) and "ldaps"
+            server_opts['ldap_protocol'] = config.get('ldap', 'protocol', fallback='ldap')
             server_opts['ldap_filter_realname_key'] = config.get('ldap', 'filter_realname_key')
         except NoOptionError:
             if args.verbose:
@@ -156,14 +158,14 @@ def loadconfig(version='Unknown'):
     tooling = Tools(server_opts, constants.STATES, version)
     return server_opts, args, tooling
 
-def get_ldap_conn(host, username, password, reuse=None):
+def get_ldap_conn(host, username, password, protocol, reuse=None):
     """
     Returns an LDAP connection
     """
     if reuse:
         ldap_conn = reuse
     else:
-        ldap_conn = initialize("ldap://"+host)
+        ldap_conn = initialize(protocol + "://"+host)
     try:
         ldap_conn.bind_s(username, password)
     except Exception as err_msg:
@@ -182,7 +184,8 @@ def get_memberof(realname, server_options, reuse=None):
         ldap_conn, err_msg = get_ldap_conn(
             server_options['ldap_host'],
             server_options['ldap_username'],
-            server_options['ldap_password'])
+            server_options['ldap_password'],
+            server_options['ldap_protocol'])
         if err_msg:
             return list(), 'Error: wrong cassh ldap credentials'
     try:
@@ -238,7 +241,8 @@ def ldap_authentification(server_options, admin=False):
             server_options['ldap_username_prefix'],
             realname,
             server_options['ldap_username_suffix']),
-        password)
+        password,
+        server_options['ldap_protocol'])
     if err_msg:
         return False, err_msg
 
@@ -247,6 +251,7 @@ def ldap_authentification(server_options, admin=False):
         server_options['ldap_host'],
         server_options['ldap_username'],
         server_options['ldap_password'],
+        server_options['ldap_protocol'],
         reuse=ldap_conn)
     if err_msg:
         return False, 'Error: wrong cassh ldap credentials'
@@ -666,7 +671,8 @@ class Tools():
             ldap_conn, _ = get_ldap_conn(
                 self.server_opts['ldap_host'],
                 self.server_opts['ldap_username'],
-                self.server_opts['ldap_password'])
+                self.server_opts['ldap_password'],
+                self.server_opts['ldap_protocol'])
         if is_list:
             d_result = {}
             for res in result:
