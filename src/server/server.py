@@ -697,7 +697,8 @@ class PrincipalsSearch():
             ldap_conn, _ = tools.get_ldap_conn(
                 SERVER_OPTS['ldap_host'],
                 SERVER_OPTS['ldap_username'],
-                SERVER_OPTS['ldap_password'])
+                SERVER_OPTS['ldap_password'],
+                SERVER_OPTS['ldap_protocol'])
 
         result = dict()
 
