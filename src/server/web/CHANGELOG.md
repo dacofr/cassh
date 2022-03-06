@@ -4,6 +4,25 @@ CHANGELOG
 CASSH Web Client
 -----
 
+1.3.0
+-----
+
+2021/05/10
+
+### New Features
+  - `LISTEN` parameter in configuration for the WEB UI (@fedegiova)
+
+1.2.0
+-----
+
+2020/05/05
+
+### New Features
+  - Allow env variables to be set instead (or in complement) of the `settings.txt` configuration file.
+
+### Changes
+  - VERSION is not necessary anymore in configuration file, hard-coded.
+
 1.1.1
 -----
 

@@ -1,7 +1,6 @@
 FROM python:3.8
 
 WORKDIR /opt/cassh
-ENTRYPOINT ["/opt/cassh/server/docker-entrypoint"]
 
 RUN apt-get update \
     && apt-get install -yqq \
@@ -11,9 +10,10 @@ RUN apt-get update \
         libsasl2-dev \
     && rm -rf /var/lib/apt/lists/*
 
-
 COPY requirements.txt ./
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . server/
+COPY . .
+
+CMD [ "python", "./server.py" ]
