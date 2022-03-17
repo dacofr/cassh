@@ -1,69 +1,19 @@
 # CASSH
 
-SSH keys management at scale !
+[![Build Status](https://travis-ci.com/nbeguier/cassh.svg?branch=master)](https://travis-ci.com/nbeguier/cassh) [![Python 3.5|3.9](https://img.shields.io/badge/python-3.5|3.9-green.svg)](https://www.python.org/) [![License](https://img.shields.io/github/license/nbeguier/cassh?color=blue)](https://github.com/nbeguier/cassh/blob/master/LICENSE)
 
-[![Build Status](https://travis-ci.org/leboncoin/cassh.svg?branch=master)](https://travis-ci.org/leboncoin/cassh)
-
-
-A client / server app to ease management of PKI based SSH keys.
-
+OpenSSH features reach their limit when it comes to industrialization. We don’t want an administrator to sign every user’s public key by hand every day, so we need a service for that. That is exactly the purpose of CASSH: **signing keys**!
 Developped for @leboncoin
 
 https://medium.com/leboncoin-engineering-blog/cassh-ssh-key-signing-tool-39fd3b8e4de7
 
+  - [CLI version : **1.8.0** *(10/05/2021)*](src/client/CHANGELOG.md) ![leboncoin/cassh](https://img.shields.io/docker/pulls/leboncoin/cassh) + ![nbeguier/cassh-client](https://img.shields.io/docker/pulls/nbeguier/cassh-client) [![docker-build](https://img.shields.io/docker/cloud/automated/nbeguier/cassh-client)](https://hub.docker.com/r/nbeguier/cassh-client)
+  - [WebUI version : **1.3.0** *(10/05/2021)*](src/server/web/CHANGELOG.md) ![nbeguier/cassh-web](https://img.shields.io/docker/pulls/nbeguier/cassh-web) [![docker-build](https://img.shields.io/docker/cloud/automated/nbeguier/cassh-web)](https://hub.docker.com/r/nbeguier/cassh-web)
+  - [Server version : **2.3.1** *(06/03/2022)*](src/server/CHANGELOG.md) ![leboncoin/cassh-server](https://img.shields.io/docker/pulls/leboncoin/cassh-server) + ![nbeguier/cassh-server](https://img.shields.io/docker/pulls/nbeguier/cassh-server) [![docker-build](https://img.shields.io/docker/cloud/automated/nbeguier/cassh-server)](https://hub.docker.com/r/nbeguier/cassh-server)
 
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+## Usage
 
-- [TL;DR](#tldr)
-  - [Requirements](#requirements)
-  - [Usage](#usage)
-    - [User](#user)
-    - [Admin](#admin)
-- [Install](#install)
-  - [Server](#server)
-    - [Install](#install-1)
-    - [Config](#config)
-    - [Init the Database](#init-the-database)
-    - [Run](#run)
-  - [WebUI](#webui)
-  - [Client](#client)
-    - [Install](#install-2)
-    - [Config](#config-1)
-- [CASSH-server features](#cassh-server-features)
-  - [Active SSL](#active-ssl)
-  - [Active LDAP](#active-ldap)
-- [Dev setup](#dev-setup)
-  - [Requirements](#requirements-1)
-  - [Developpement](#developpement)
-  - [Automated tasks](#automated-tasks)
-  - [Tests](#tests)
-  - [CI](#ci)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
-
-
-## TL;DR
-
-### Requirements
-
-Server:
-* `Python`
-* `Postgres` as backend
-* `openssh-client` (`ssh-keygen`)
-
-CLI:
-* `Python`
-
-
-OR `docker`
-
-
-### Usage
-
-#### User
+### Client CLI
 
 Add new key to cassh-server :
 ```
@@ -90,7 +40,40 @@ Get ca krl :
 cassh krl
 ```
 
-#### Admin
+### Admin CLI
+
+```
+usage: cassh admin [-h] [-s SET] [--add-principals ADD_PRINCIPALS]
+                   [--remove-principals REMOVE_PRINCIPALS]
+                   [--purge-principals]
+                   [--update-principals UPDATE_PRINCIPALS]
+                   [--principals-filter PRINCIPALS_FILTER]
+                   username action
+
+positional arguments:
+  username              Username of client's key, if username is 'all' status
+                        return all users
+  action                Choice between : active, delete, revoke, set, search,
+                        status keys
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -s SET, --set SET     CAUTION: Set value of a user.
+  --add-principals ADD_PRINCIPALS
+                        Add a list of principals to a user, should be
+                        separated by comma without spaces.
+  --remove-principals REMOVE_PRINCIPALS
+                        Remove a list of principals to a user, should be
+                        separated by comma without spaces.
+  --purge-principals    Purge all principals to a user.
+  --update-principals UPDATE_PRINCIPALS
+                        Update all principals to a user by the given
+                        principals, should be separated by comma without
+                        spaces.
+  --principals-filter PRINCIPALS_FILTER
+                        Look for users by the given principals filter, should
+                        be separated by comma without spaces.
+```
 
 Active Client **username** key :
 ```
@@ -114,300 +97,140 @@ cassh admin <username> status
 
 Set Client **username** key :
 ```
-cassh admin <username> set --set='expiry=+7d'
-cassh admin <username> set --set='principals=username,root'
+# Set expiry to 7 days
+cassh admin <username> set --set='expiry=7d'
+
+# Add principals to existing ones
+cassh admin <username> set --add-principals foo,bar
+
+# Remove principals from existing ones
+cassh admin <username> set --remove-principals foo,bar
+
+# Update principals and erease existsing ones
+cassh admin <username> set --update-principals foo,bar
+
+# Purge principals
+cassh admin <username> set --purge-principals
 ```
 
-#### Configuration file
-
-```ini
-[user]
-# name : this is the username you will use to log on every server
-name = user
-# key_path: This key path won\'t be used to log in, a copy will be made for the certificate.
-# We assume that `${key_path}` exists and `${key_path}.pub` as well.
-# WARNING: Never delete these keys
-key_path = ~/.ssh/id_rsa
-# key_signed_path: Every signed key via cassh will be put in this path.
-# At every sign, `${key_signed_path}` and `${key_signed_path}.pub` will be created
-key_signed_path = ~/.ssh/id_rsa-cert
-# url : URL of cassh server-side backend.
-url = https://cassh.net
-# [OPTIONNAL] timeout : requests timeout parameter in second. (timeout=2)
-# timeout = 2
-# [OPTIONNAL] verify : verifies SSL certificates for HTTPS requests. (verify=True)
-# verify = True
-
-[ldap]
-# realname : this is the LDAP/AD login user
-realname = ursula.ser@domain.fr
+Search **Principals** among clients :
 ```
-
+cassh admin all search --principals-filter foo,bar
+```
 
 ## Install
 
 ### Server
 
-#### Install
-
-```bash
-# Python Pip
-sudo apt-get install \
-    python-pip \
-    python-dev \
-    libsasl2-dev \
-    libldap2-dev \
-    libssl-dev \
-    libpq-dev
-
-pip install -r src/server/requirements.txt
-```
-OR
-
-```bash
-# Debian packages
-sudo apt-get install \
-    python-psycopg2 \
-    python-webpy \
-    python-ldap \
-    python-configparser \
-    python-requests \
-    python-openssl
-```
-
-OR
-
-```
-docker pull leboncoin/cassh-server:VERSION
-```
-
-
-#### Config
-
-```bash
-# Generate CA ssh key and revocation key file
-mkdir test-keys
-ssh-keygen -C CA -t rsa -b 4096 -o -a 100 -N "" -f /etc/cassh-server/ca/id_rsa_ca # without passphrase
-ssh-keygen -k -f /etc/cassh-server/krl/revoked-keys
-```
-
-
-```ini
-# cassh.conf
-[main]
-ca = /etc/cassh-server/ca/id_rsa_ca
-krl = /etc/cassh-server/krl/revoked-keys
-port = 8080
-# Optionnal : admin_db_failover is used to bypass db when it fails.
-# admin_db_failover = False
-
-[postgres]
-host = cassh.domain.fr
-dbname = casshdb
-user = cassh
-password = xxxxxxxx
-
-# Highly recommended
-[ldap]
-host = ldap.domain.fr
-bind_dn = OU=User,DC=domain,DC=fr
-admin_cn = CN=Admin,OU=Group,DC=domain,DC=fr
-protocol = ldaps
-# Key in user result to get his LDAP realname
-filterstr = userPrincipalName
-
-# Optionnal
-[ssl]
-private_key = /etc/cassh-server/ssl/cert.key
-public_key = /etc/cassh-server/ssl/cert.pem
-```
-
-
-#### Init the Database
-
-* You need a database and a user's credentials 
-* Init the database with this sql statement: [SQL Model](src/server/sql/users.sql)
-* Update the `cassh-server` config with the user's credentials
-
-
-#### Run
-
-```bash
-python src/server/server.py --config "/etc/cassh-server/cassh.conf"
-```
-
-or
-
-```bash
-docker run --rm \
-  --volume=/etc/cassh-server/cassh.conf:/opt/cassh/server/conf/cassh.conf \
-  --volume=${CASSH_KEYS_DIR}:${CASSH_KEYS_DIR} \
-  --publish "8080:8080" \
-  leboncoin/cassh-server
-```
-
-
-
-### WebUI
-
-A webui based on `flask` is also available for client not familiar with CLI.
-It must run on the same OS than the `cassh-server`.
-
-```bash
-pip3 insall -r src/server/web/requirements.txt
-
-cp src/server/web/settings.txt.sample src/server/web/settings.txt
-
-python3 src/server/web/cassh_web.py
-```
-
-
+[INSTALL.md](src/server/INSTALL.md)
 
 ### Client
 
-#### Install
+[INSTALL.md](src/client/INSTALL.md)
 
-Python 3
+### Cassh WebUI
 
-```bash
-sudo apt-get install python3-pip
-pip3 install -r src/client/requirements.txt
+[INSTALL.md](src/server/web/INSTALL.md)
 
-alias cassh="${PWD}/src/client/cassh"
-```
 
-Python 2
+## Quick test
 
-```bash
-sudo apt-get install python-pip
-pip install -r src/client/requirements.txt
+### Server side
 
-alias cassh="${PWD}/src/client/cassh"
-```
+Install docker : https://docs.docker.com/engine/installation/
 
-Docker
+#### Prerequisites
 
 ```bash
-./contrib/cassh_docker.sh
+# install utilities needed by tests/test.sh
+sudo apt install pwgen jq
+
+# Make a 'sudo' only if your user doesn't have docker rights, add your user into docker group
+pip install -r tests/requirements.txt
+
+cp tests/cassh/cassh.conf.sample tests/cassh/cassh.conf
+cp tests/cassh/ldap_mapping.json.sample tests/cassh/ldap_mapping.json
+
+# Edit cassh.conf file to configure the hosts
+
+# Generate temporary certificates
+mkdir test-keys
+ssh-keygen -C CA -t rsa -b 4096 -o -a 100 -N "" -f test-keys/id_rsa_ca # without passphrase
+ssh-keygen -k -f test-keys/revoked-keys
+
+############################################
+# BEGIN THE ONE OR MULTIPLE INSTANCES STEP #
+############################################
+
+# Duplicate the cassh.conf
+cp tests/cassh/cassh.conf tests/cassh/cassh_2.conf
+# Generate another krl
+ssh-keygen -k -f test-keys/revoked-keys-2
+sed -i "s/revoked-keys/revoked-keys-2/g" tests/cassh/cassh_2.conf
 ```
 
-Put in your Shell rc file `alias cassh="PATH_TO/contrib/cassh_docker.sh"`
+#### One instance
 
 
-#### Config
+```bash
+# Launch this on another terminal
+bash tests/launch_demo_server.sh --server_code_path ${PWD} --debug
+$ /opt/cassh/src/server/server.py --config /opt/cassh/tests/cassh/cassh.conf
 
-Sample available at [./src/client/cassh-client.conf](./src/client/cassh-client.conf)
-
-
-
-
-## CASSH-server features
-
-### Active SSL
-```ini
-[ssl]
-private_key = __CASSH_PATH__/ssl/server.key
-public_key = __CASSH_PATH__/ssl/server.pem
+# When 'http://0.0.0.0:8080/' appears, start this script
+bash tests/test.sh
 ```
 
-### Active LDAP
-```ini
+#### Multiple instances
+
+The same as previsouly, but launch this to specify a second cassh-server instance
+
+```bash
+# Launch this on another terminal
+bash tests/launch_demo_server.sh --server_code_path ${PWD} --debug --port 8081
+$ /opt/cassh/src/server/server.py --config /opt/cassh/tests/cassh/cassh_2.conf
+```
+
+
+### Client side
+
+Generate key pair then sign it !
+
+```bash
+git clone https://github.com/nbeguier/cassh.git /opt/cassh
+cd /opt/cassh
+
+# Generate key pair
+mkdir test-keys
+ssh-keygen -t rsa -b 4096 -o -a 100 -f test-keys/id_rsa
+
+rm -f ~/.cassh
+cat << EOF > ~/.cassh
+[user]
+name = user
+key_path = ${PWD}/test-keys/id_rsa
+key_signed_path = ${PWD}/test-keys/id_rsa-cert
+url = http://localhost:8080
+
 [ldap]
-host = ldap.domain.fr
-bind_dn = OU=User,DC=domain,DC=fr
-admin_cn = CN=Admin,OU=Group,DC=domain,DC=fr
-# Key in user result to get his LDAP realname
-filterstr = userPrincipalName
+realname = user@test.fr
+EOF
+
+# List keys
+python cassh status
+
+# Add it into server
+python cassh add
+
+# ADMIN: Active key
+python cassh admin user active
+
+# Sign it !
+python cassh sign [--display-only]
 ```
 
+# License
+Licensed under the [Apache License](https://github.com/nbeguier/cassh/blob/master/LICENSE), Version 2.0 (the "License").
 
-
-
-## Dev setup
-
-### Requirements
-
-Needed:
-* `docker` : https://docs.docker.com/engine/installation/
-* `docker-compose`: https://docs.docker.com/compose/installation/
-* `invoke`: http://www.pyinvoke.org/
-
-If installed and run locally:
-* `bats`: https://github.com/sstephenson/bats
-* `curl`, `jq` & `openssh-client` with your distro packages manager
-
-
-### Developpement
-
-Start the server and its dependencies:
-
-```
-$ cd tests/
-$ docker-compose up cassh-server
-```
-
-
-In an other shell, submit `cassh` CLI commands:
-
-```
-$ cd tests/
-$ docker-compose run cassh-cli
-
-Starting tests_db_1 ... done
-Starting tests_cassh-server_1 ... done
-usage: cassh [-h] [--version] {admin,add,sign,status,ca,krl} ...
-
-positional arguments:
-  {admin,add,sign,status,ca,krl}
-                        commands
-    admin               Administrator command : active - revoke - delete -
-                        status - set keys
-    add                 Add a key to remote ssh ca server.
-    sign                Sign its key by remote ssh ca server.
-    status              Display key current status on remote ssh ca server.
-    ca                  Display CA public key.
-    krl                 Display CA KRL.
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --version             show program's version number and exit
-```
-
-
-### Automated tasks
-
-Some redondent tasks are automated using `invoke`.
-They are defined in the [`tasks/`](./tasks/) directory.
-
-```bash
-$ invoke -l
-
-Available tasks:
-
-  build.all              Build cassh & cassh-server docker images
-  build.cassh            Build cassh CLI
-  build.cassh-server     Build cassh-server
-  release.all            Push cassh & cassh-server docker images to Docker hub
-  release.cassh          Push cassh CLI docker image to Docker hub
-  release.cassh-server   Push cassh-server docker image to Docker hub
-  test.e2e               End to End tests of CASSH-server and CASSH cli
-  test.lint-client       pylint cassh
-  test.lint-server       pylint cassh-server
-```
-
-
-### Tests
-
-```bash
-$ invoke test.e2e
-```
-
-
-### CI
-
-* CI jobs are configured on [Travis-ci.org](https://travis-ci.org/leboncoin/cassh).
-* You can configure and see what is run by reading [.travis.yml](.travis.yml).
-* On successful tests, docker images are published on docker hub 
-  - https://hub.docker.com/r/leboncoin/cassh/
-  - https://hub.docker.com/r/leboncoin/cassh-server/
-
+# Copyright
+Copyright 2017-2022 Nicolas BEGUIER; ([nbeguier](https://beguier.eu/nicolas/) - nicolas_beguier[at]hotmail[dot]com)

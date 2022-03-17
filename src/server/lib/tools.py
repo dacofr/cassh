@@ -2,7 +2,7 @@
 """
 tools lib
 
-Copyright 2017 Nicolas BEGUIER
+Copyright 2017-2022 Nicolas BEGUIER
 Licensed under the Apache License, Version 2.0
 Written by Nicolas BEGUIER (nicolas_beguier@hotmail.com)
 
@@ -97,9 +97,12 @@ def loadconfig(version='Unknown'):
             server_opts['ldap_username'] = config.get('ldap', 'username')
             server_opts['ldap_password'] = config.get('ldap', 'password')
             server_opts['ldap_admin_cn'] = config.get('ldap', 'admin_cn')
-            # ldap_protocol valid values: "ldap" (default for backward compatibility) and "ldaps"
-            server_opts['ldap_protocol'] = config.get('ldap', 'protocol', fallback='ldap')
             server_opts['ldap_filter_realname_key'] = config.get('ldap', 'filter_realname_key')
+            server_opts['ldap_protocol'] = config.get('ldap', 'protocol', fallback='ldap')
+            if server_opts['ldap_protocol'] not in ['ldap', 'ldaps', 'starttls']:
+                print('Option reading error (ldap): %s not in ["ldap", "ldaps", "starttls"]' \
+                    % (server_opts['ldap_protocol']))
+                sys.exit(1)
         except NoOptionError:
             if args.verbose:
                 print('Option reading error (ldap).')
@@ -165,7 +168,15 @@ def get_ldap_conn(host, username, password, protocol, reuse=None):
     if reuse:
         ldap_conn = reuse
     else:
-        ldap_conn = initialize(protocol + "://"+host)
+        is_starttls = protocol == 'starttls'
+        if is_starttls:
+            protocol = 'ldap'
+        ldap_conn = initialize(protocol + "://" + host)
+        if is_starttls:
+            try:
+                ldap_conn.start_tls_s()
+            except Exception as err_msg:
+                return False, 'Error: (ldap starttls) {}'.format(err_msg)
     try:
         ldap_conn.bind_s(username, password)
     except Exception as err_msg:
@@ -561,9 +572,8 @@ class Tools():
                     content_type='application/octet-stream')
 
             for pubkey in pubkeys:
-                tmp_pubkey = NamedTemporaryFile(delete=False)
-                tmp_pubkey.write(bytes(pubkey[0], 'utf-8'))
-                tmp_pubkey.close()
+                with NamedTemporaryFile(delete=False) as tmp_pubkey:
+                    tmp_pubkey.write(bytes(pubkey[0], 'utf-8'))
                 ca_ssh.update_krl(tmp_pubkey.name)
             remove(tmp_pubkey.name)
 
@@ -594,7 +604,7 @@ class Tools():
         is_list = False
 
         if realname is not None:
-            cur.execute('SELECT * FROM USERS WHERE REALNAME=lower((%s))', (realname,))
+            cur.execute('SELECT * FROM USERS WHERE REALNAME=(%s)', (realname,))
             result = cur.fetchone()
         elif username is not None:
             cur.execute('SELECT * FROM USERS WHERE NAME=(%s)', (username,))
@@ -652,7 +662,7 @@ class Tools():
         # Sign the key
         try:
             cert_contents = ca_ssh.sign_public_user_key(\
-                tmp_pubkey_name, username, expiry, principals)
+                tmp_pubkey_name, username, '+'+expiry, principals)
             if db_cursor is not None:
                 db_cursor.execute('UPDATE USERS SET STATE=0, EXPIRATION=(%s) WHERE NAME=(%s)', \
                     (time() + str2date(expiry), username))

@@ -4,6 +4,40 @@ CHANGELOG
 CASSH Server
 -----
 
+2.3.1
+-----
+
+2022/03/06
+
+### New Features
+  - add ldap starttls support
+
+### Changes
+  - add ldaps+starttls support on tests
+
+2.3.0
+-----
+
+2022/03/03
+
+### New Features
+  - protocol definition in ldap configuration -> ldaps support (@arnaudmm)
+
+2.2.0
+-----
+
+2021/03/26
+
+### New Features
+  - `realname` can have upper case (@fedegiova)
+
+### Changes
+  - `expiry` do not require a `+`
+
+## Lint
+  - R1732: Consider using 'with' for resource-allocating operations
+  - W1401: Anomalous backslash in string: '\d'. String constant might be missing an r prefix.
+
 2.1.1
 -----
 
