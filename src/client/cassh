@@ -68,7 +68,7 @@ def read_conf(conf_path):
     if not config.has_option('user', 'timeout'):
         user_metadata['timeout'] = 2
     else:
-        user_metadata['timeout'] = config.get('user', 'timeout')
+        user_metadata['timeout'] = int(config.get('user', 'timeout'))
 
     if not config.has_option('user', 'verify'):
         user_metadata['verify'] = True
